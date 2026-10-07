@@ -1,0 +1,3 @@
+F86 data sources:
+- engine data: https://www.enginehistory.org/GasTurbines/GE/J47/J47Ins/J47Ins2.shtml
+- wing data: http://airfoiltools.com/airfoil/details?airfoil=naca001264-il

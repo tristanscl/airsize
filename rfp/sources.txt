@@ -1,0 +1,3 @@
+- A320 neo:
+    - https://www.aircraft.airbus.com/en/aircraft/a320-family/a320neo?pubDate=20260825
+    - https://www.aircraft.airbus.com/en/customer-care/fleet-wide-care/airport-operations-and-aircraft-characteristics/aircraft-characteristics
