@@ -18,8 +18,6 @@ import airsize.dyn as dyn
 import airsize.runway as rw
 import airsize.optim as optim
 
-## Global ##
-
 st.title("Benchmark - F86 redesign")
 
 left_col, right_col = st.columns(2)
@@ -142,22 +140,24 @@ with left_col:
         # Phase 1b: takeoff ground roll
         rho_1b = isa.rho0_ISA  # kg.m-3
         k_1b = st.number_input(
-            r"$k = V_{TO}/V_{stall}$", value=1.1
+            r"$k = V_{TO}/V_{stall}$", value=1.1, key="k_1b"
         )  # ASSUMPTION (10% margin over Vstall for takeoff)
         alpha_1b = alpha_1a
         TSFC_1b = wet_avg_tsfc  # s-1
-        HL_multiplier = st.number_input("High lift $C_L^{max}$ multiplier", value=1.3)
+        HL_mult_1 = st.number_input(
+            "High lift $C_L^{max}$ multiplier", value=1.3, key="HL_mult_1"
+        )
         CL_1 = (
-            CLmax * HL_multiplier
+            CLmax * HL_mult_1
         )  # ASSUMPTION (high lift devices, increasing lift by 30%)
         drag_penalty_1 = st.number_input(
-            "High lift drag multiplier", value=1.35
+            "High lift drag multiplier", value=1.35, key="drag_penalty_1"
         )  # ASSUMPTION (drag is increased by 35% using high lift devices)
         mu_1b = st.number_input(
-            r"$\mu$ (Coulomb drag coefficient)", value=0.02
+            r"$\mu$ (Coulomb drag coefficient)", value=0.02, key="mu_1b"
         )  # ASSUMPTION (from lecture slides)
         s_1 = (
-            st.number_input("$s_{GR}/s_{TO}^{max}$", value=0.9) * sTO_max
+            st.number_input("$s_{GR}/s_{TO}^{max}$", value=0.9, key="s_1") * sTO_max
         )  # ASSUMPTION (10% margin)
 
         # Phase 1c: takeoff rotation
@@ -177,9 +177,9 @@ with left_col:
         """
         h2_2 = 0.0  # m
         rho_2 = isa.rho0_ISA  # kg.m-3
-        CL_2 = CLmax * HL_multiplier
+        CL_2 = CLmax * HL_mult_1
         V1_2 = units.ft2m(
-            st.number_input("Target speed in ft/s", value=1020 * 1.1)
+            st.number_input("Target speed in ft/s", value=1020 * 1.1, key="V1_2")
         )  # m/s, ASSUMPTION (10% more than target speed)
         TSFC_2 = wet_avg_tsfc  # s-1
         alpha_2 = 1.0
@@ -202,6 +202,7 @@ with left_col:
         n_split_3 = st.number_input(
             "$n_{split}$ (number of subdivisions of the climb for more accurate integration)",
             value=10,
+            key="n_split_3",
         )  # ASSUMPTION (alpha relatively constant on 3540 ft intervals)
         CL_3 = CLmax  # ASSUMPTION (climbing with CLmax and no high lift devices)
         V_3 = V1_2  # ASSUMPTION (continuity)
