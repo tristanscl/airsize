@@ -3403,6 +3403,22 @@ typing-extensions = {version = ">=4.10.0", markers = "python_version < \"3.13\""
 full = ["httpx (>=0.27.0,<0.29.0)", "httpx2 (>=2.0.0)", "itsdangerous", "jinja2", "opentelemetry-api", "python-multipart (>=0.0.18)", "pyyaml"]
 
 [[package]]
+name = "stqdm"
+version = "0.2.1"
+description = "Easy progress bar for streamlit based on the awesome streamlit.progress and tqdm"
+optional = false
+python-versions = ">=3.11"
+groups = ["main"]
+files = [
+    {file = "stqdm-0.2.1-py3-none-any.whl", hash = "sha256:7cb69888c2c6c146501d676168e1929e021e5cbcb198658d7f7370ee9b51801e"},
+    {file = "stqdm-0.2.1.tar.gz", hash = "sha256:311cee1ad0d0528ddd1c3b6e78921df48d7aefcde64708b4ec25770ac599d545"},
+]
+
+[package.dependencies]
+streamlit = ">=1.41.0"
+tqdm = ">=4.66.0"
+
+[[package]]
 name = "streamlit"
 version = "1.64.0"
 description = "A faster way to build and share data apps"
@@ -3879,4 +3895,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.12"
-content-hash = "581d4371104b4bceaa73a90e7b2d07cf6c594f93bfef7c83e63cea2687e33e3c"
+content-hash = "d2ece5c361dc8b2809069a7f7b9ebbcb76b5547bcc8d532d939224645722893f"

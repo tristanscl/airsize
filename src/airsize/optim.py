@@ -2,6 +2,7 @@ import numpy as np
 import numdifftools as nd
 from typing import Callable
 from tqdm import tqdm
+from stqdm import stqdm
 
 Constraint = Callable[[np.ndarray], float]
 
@@ -30,6 +31,7 @@ def minimum_fuel_design(
     verbose: bool = False,
     print_path: bool = False,
     normalize_print: bool = True,
+    _gui: bool = False,
 ) -> (
     tuple[np.ndarray, np.ndarray, np.ndarray]
     | list[tuple[np.ndarray, np.ndarray, np.ndarray]]
@@ -65,7 +67,8 @@ def minimum_fuel_design(
         x_path = [x * xref]
     if print_path:
         print(f"Epoch 0/{n_epochs}:", x)
-    for i in tqdm(range(n_epochs), disable=not verbose, desc="minimizing fuel"):
+    load_bar = stqdm if _gui else tqdm
+    for i in load_bar(range(n_epochs), disable=not verbose, desc="Minimizing fuel"):
         x -= lr * grad_loss(x)
         if print_path:
             print(f"Epoch {i+1}/{n_epochs}:", x if normalize_print else x * xref)
