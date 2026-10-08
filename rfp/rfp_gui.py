@@ -28,12 +28,15 @@ with left_col:
 
     # Global: requirements
     with st.expander("General requirements"):
-        WP = isa.g_ISA * (
-            weights.compute_WP(
-                st.number_input("Number of passengers", value=180 + 6), long_flight=True
+        WP = (
+            isa.g_ISA
+            * (
+                weights.compute_WP(
+                    st.number_input("Number of passengers", value=180 + 6),
+                    long_flight=True,
+                )
             )
-        ) * (
-            1 + st.number_input("Payload margin in %", value=10) / 100
+            * (1 + st.number_input("Payload margin in %", value=10) / 100)
         )  # N, ASSUMPTION (10% margin)
         min_fuel = st.number_input("Min. fuel reserve in %", value=5) / 100
         sTO_max = units.ft2m(
@@ -706,7 +709,7 @@ def main():
     plt.plot(WS_history, TW_cruise_history, label="optim. path", color="gray")
     plt.scatter([WSref], [TWref[0]], label="ref.", color="blue")
     plt.scatter([WS], [TW_cruise], label="end", color="red")
-    WF_1a = Wref * phase_1a(x)
+    WF_1a = Wref * phase_1a(x)[0]
     beta_1a = comp_beta(WF_1a, WS, S)
     CD_1 = aero.drag_polar(CLmax, K1, K2, CD0) * drag_penalty_1
     xi_1 = rw.compute_xi(CD_1, CDR, mu_1b, CL_1)
@@ -714,7 +717,7 @@ def main():
         WS_range, alpha_1b, beta_1a, xi_1, mu_1b, CL_1, s_1, k_1b, rho_1b, g0
     )
     plt.fill_between(WS_range, TW_cruise_1, 0.0, label="phase 1", alpha=0.3)
-    WF_1c = Wref * phase_1c(x)
+    WF_1c = Wref * phase_1c(x)[0]
     beta_1 = comp_beta(WF_1c, WS, S)
     T1_2 = isa.T_ISA(h1_2)
     V1_2 = M1_2 * isa.compute_cs(T1_2)
@@ -725,7 +728,7 @@ def main():
         WS_range, alpha_2, beta_1, K1, K2, CD0, dhdt_2, V1_2, q1_2
     )
     plt.fill_between(WS_range, TW_cruise_2, 0.0, label="phase 2", alpha=0.3)
-    WF_2 = Wref * phase_2(x)
+    WF_2 = Wref * phase_2(x)[0]
     beta_2 = comp_beta(WF_2, WS, S)
     T1_3 = isa.T_ISA(h1_3)
     V1_3 = M1_3 * isa.compute_cs(T1_3)
@@ -736,7 +739,7 @@ def main():
         WS_range, alpha_3, beta_2, K1, K2, CD0, dhdt_3, V1_3, q1_3
     )
     plt.fill_between(WS_range, TW_cruise_3, 0.0, label="phase 3", alpha=0.3)
-    WF_3 = Wref * phase_3(x)
+    WF_3 = Wref * phase_3(x)[0]
     beta_3 = comp_beta(WF_3, WS, S)
     T_4 = isa.T_ISA(h_4)
     V_4 = M_4 * isa.compute_cs(T_4)
@@ -747,7 +750,7 @@ def main():
         WS_range, alpha_4, beta_3, K1, K2, CD0, q_4
     )
     plt.fill_between(WS_range, TW_cruise_4, 0.0, label="phase 4", alpha=0.3)
-    WF_4 = Wref * phase_4(x)
+    WF_4 = Wref * phase_4(x)[0]
     beta_4 = comp_beta(WF_4, WS, S)
     T1_5 = isa.T_ISA(h1_5)
     V1_5 = M_5 * isa.compute_cs(T1_5)
@@ -758,7 +761,7 @@ def main():
         WS_range, alpha_5, beta_4, K1, K2, CD0, dhdt_5, V1_5, q1_5
     )
     plt.fill_between(WS_range, TW_cruise_5, 0.0, label="phase 5", alpha=0.3)
-    WF_5 = Wref * phase_5(x)
+    WF_5 = Wref * phase_5(x)[0]
     beta_5 = comp_beta(WF_5, WS, S)
     T_6 = isa.T_ISA(h_6)
     V_6 = M_6 * isa.compute_cs(T_6)
@@ -769,7 +772,7 @@ def main():
         WS_range, alpha_6, beta_5, K1, K2, CD0, q_6
     )
     plt.fill_between(WS_range, TW_cruise_6, 0.0, label="phase 6", alpha=0.3)
-    WF_6 = Wref * phase_6(x)
+    WF_6 = Wref * phase_6(x)[0]
     beta_6 = comp_beta(WF_6, WS, S)
     T_8 = isa.T_ISA(h_8)
     V_8 = M_8 * isa.compute_cs(T_8)
@@ -780,7 +783,7 @@ def main():
         WS_range, alpha_8, beta_6, K1, K2, CD0, q_8, n_8
     )
     plt.fill_between(WS_range, TW_cruise_8, 0.0, label="phase 8", alpha=0.3)
-    WF_8 = Wref * phase_8(x)
+    WF_8 = Wref * phase_8(x)[0]
     beta_8 = comp_beta(WF_8, WS, S)
     V_9 = Vapp_9 * k_9
     WSmax = cst.non_stall_landing(beta_8, CLmax, V_9, rho_9)
@@ -835,6 +838,13 @@ def main():
     plt.title(f"Initial weight breakdown (total {(WTO / g0 / 1000):.2f} t)")
     plt.tight_layout()
     st.pyplot(fig)
+
+    st.subheader("Convereged design point")
+    f"""
+* $T_{{SL}} / W_{{TO}}$: {TW_cruise:.3f}
+* $W_{{TO}} / S$: {WS:.0f} Pa
+* $S$: {S:.1f} m$^2$
+"""
 
 
 with right_col:
