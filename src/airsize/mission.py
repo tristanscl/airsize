@@ -7,7 +7,10 @@ def weight_fraq_eq(W, D, R, TSFC, dt):
 
 
 def constant_speed_climb(TW, h0, h1, alpha, beta, CD, CL, V, TSFC):
-    return np.exp(-TSFC / V * (h1 - h0) / (1 - CD / CL * beta / alpha / TW))
+    u = CD / CL * beta / alpha / TW
+    if np.any(u >= 1):
+        return 0.0
+    return np.exp(-TSFC / V * (h1 - h0) / (1 - u))
 
 
 def constant_speed_climb_check(theta, u):

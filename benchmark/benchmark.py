@@ -25,19 +25,26 @@ import airsize.optim as optim
 
 
 # Global: requirements
-WP = units.lb2kg(210 + 432) * 1.1  # kg, ASSUMPTION (10% margin)
+WP = units.lbf2N(210 + 432) * 1.1  # N, ASSUMPTION (10% margin)
 min_fuel = 0.1 + 0.05  # ASSUMPTION (5% margin)
 sTO_max = units.ft2m(4400)  # m
 sL_max = units.ft2m(5000)  # m
 
 # Global: aerodynamics
 CLmax = 1.3
-CL_max_LD = 0.97960
-CD_max_LD = 0.01550
-K1 = 1.42e-2
-K2 = 0.0
-CD0 = 4.59e-3
+# CL_max_LD = 0.97960
+# CD_max_LD = 0.01550
+# K1 = 1.42e-2
+# K2 = 0.0
+# CD0 = 4.59e-3
 CDR = 0.0  # ASSUMPTION (drag from landing gear is negligible)
+AR = 4.883
+e = 0.75  # ASSUMPTION (from lecture slides)
+CD0 = 0.020
+K1 = 1.0 / (np.pi * e * AR)
+K2 = 0.0
+CL_max_LD = np.sqrt(CD0 / K1)
+CD_max_LD = CD0 + K1 * CL_max_LD**2
 
 # Global: physics
 g0 = isa.g_ISA  # m.s-2
@@ -111,7 +118,7 @@ h_5 = h1_4  # m
 V_5 = V_4  # ASSUMPTION (speed continuity)
 
 # Phase 6: climb
-h0_6 = h0_4  # m
+h0_6 = h_5  # m
 h1_6 = units.ft2m(47550)  # m
 n_split_6 = 3  # ASSUMPTION (alpha relatively constant on 2950 ft intervals)
 CL_6 = CLmax  # ASSUMPTION (climbing with CLmax and no high lift devices)
@@ -158,10 +165,10 @@ s_10 = 0.8 * sL_max  # ASSUMPTION (20% margin)
 
 ## Optimization settings ##
 
-lr = 3e-2
-n_epochs = 1000
-mission_penalty_fun = lambda x: 10 * np.maximum(-x + 0.2, 0.0) ** 2
-constraints_penalty_fun = lambda x: 10 * np.maximum(-x + 0.2, 0.0) ** 2
+lr = 5e-2
+n_epochs = 200
+mission_penalty_fun = lambda x: 100 * np.maximum(-x + 0.005, 0.0) ** 2
+constraints_penalty_fun = lambda x: 3 * np.maximum(-x + 0.05, 0.0) ** 2
 sanity_penalty_fun = lambda x: 0.0  # no sanity penalty (for positivity)
 Wref = units.lbf2N(16252)  # N
 Tref_wet = units.lbf2N(7650)  # N
@@ -294,15 +301,16 @@ def phase_3(x: np.ndarray) -> float:
     TW, WS, S, WTO, beta_before = phase_header(x, phase_2)
     _, TW_mil, _ = TW
     h_range = np.linspace(h0_3, h1_3, n_split_3 + 1)
-    beta_instant = 1.0
+    beta_current = beta_before
     CD_3 = aero.drag_polar(CL_3, K1, K2, CD0)
     for i in range(n_split_3):
         h0 = h_range[i]
         h1 = h_range[i + 1]
-        alpha = cruise_alpha_model(h1)
-        beta_instant *= mission.constant_speed_climb(
-            TW_mil, h0, h1, alpha, beta_instant, CD_3, CL_3, V_3, TSFC_3
+        alpha = mil_alpha_model(h1)
+        beta_current *= mission.constant_speed_climb(
+            TW_mil, h0, h1, alpha, beta_current, CD_3, CL_3, V_3, TSFC_3
         )
+    beta_instant = beta_current / beta_before
     WF = phase_footer(WS, S, beta_instant, beta_before)
     return WF / Wref
 
@@ -330,15 +338,16 @@ def phase_6(x: np.ndarray) -> float:
     TW, WS, S, WTO, beta_before = phase_header(x, phase_5)
     _, _, TW_wet = TW
     h_range = np.linspace(h0_6, h1_6, n_split_6 + 1)
-    beta_instant = 1.0
+    beta_current = beta_before
     CD_6 = aero.drag_polar(CL_6, K1, K2, CD0)
     for i in range(n_split_6):
         h0 = h_range[i]
         h1 = h_range[i + 1]
-        alpha = cruise_alpha_model(h1)
-        beta_instant *= mission.constant_speed_climb(
-            TW_wet, h0, h1, alpha, beta_instant, CD_6, CL_6, V_6, TSFC_6
+        alpha = wet_alpha_model(h1)
+        beta_current *= mission.constant_speed_climb(
+            TW_wet, h0, h1, alpha, beta_current, CD_6, CL_6, V_6, TSFC_6
         )
+    beta_instant = beta_current / beta_before
     WF = phase_footer(WS, S, beta_instant, beta_before)
     return WF / Wref
 
@@ -410,7 +419,7 @@ def constraint_3(x: np.ndarray) -> float:
 def constraint_4(x: np.ndarray) -> float:
     TW, WS, S, beta = constraint_header(x, phase_3)
     TW_cruise, _, _ = TW
-    alpha = mil_alpha_model(h1_4)
+    alpha = cruise_alpha_model(h1_4)
     rho = isa.rho_ISA(h1_4)
     q = aero.compute_q(V_4, rho)
     h = h1_4 - h0_4
@@ -432,7 +441,7 @@ def constraint_5(x: np.ndarray) -> float:
 def constraint_6(x: np.ndarray) -> float:
     TW, WS, S, beta = constraint_header(x, phase_5)
     _, _, TW_wet = TW
-    alpha = mil_alpha_model(h1_6)
+    alpha = wet_alpha_model(h1_6)
     rho = isa.rho_ISA(h1_6)
     q = aero.compute_q(V_6, rho)
     TWmin = cst.constant_speed_climb(WS, alpha, beta, K1, K2, CD0, dhdt_6, V_6, q)
@@ -615,7 +624,7 @@ if __name__ == "__main__":
     TW_cruise_9 = cst.constant_altitude_speed_cruise(
         WS_range, alpha_9, beta_8, K1, K2, CD0, q_9
     )
-    plt.fill_between(WS_range, TW_cruise_8, 0.0, label="phase 8", alpha=0.3)
+    plt.fill_between(WS_range, TW_cruise_9, 0.0, label="phase 9", alpha=0.3)
     plt.legend()
     plt.grid()
     plt.ylabel("$T_{SL}/W_{TO}$ [-]")
@@ -656,7 +665,7 @@ if __name__ == "__main__":
     CD_1 = aero.drag_polar(CL_1, K1, K2, CD0) * drag_penalty_1
     xi_1b = rw.compute_xi(CD_1, CDR, mu_1b, CL_1)
     TW_wet_1b = cst.takeoff_ground_roll_low_thrust(
-        WS_range, alpha_1b, beta_1a, xi_1b, mu_1b, CL_1, sTO_max, k_1b, rho_1b, g0
+        WS_range, alpha_1b, beta_1a, xi_1b, mu_1b, CL_1, s_1, k_1b, rho_1b, g0
     )
     plt.fill_between(WS_range, TW_wet_1b, 0.0, label="phase 1", alpha=0.3)
     WF_1 = Wref * phase_1c(x)
@@ -670,7 +679,7 @@ if __name__ == "__main__":
     plt.fill_between(WS_range, TW_wet_2, 0.0, label="phase 2", alpha=0.3)
     WF_5 = Wref * phase_5(x)
     beta_5 = comp_beta(WF_5, WS, S)
-    alpha_6 = cruise_alpha_model(h1_6)
+    alpha_6 = wet_alpha_model(h1_6)
     rho_6 = isa.rho_ISA(h1_6)
     q_6 = aero.compute_q(V_6, rho_6)
     TW_wet_6 = cst.constant_speed_climb(
@@ -692,8 +701,9 @@ if __name__ == "__main__":
     CD_10 = aero.drag_polar(CL_10, K1, K2, CD0)
     xi_10 = rw.compute_xi(CD_10, CDR, mu_10, CL_10)
     TW_wet_10 = cst.braking_roll(
-        WS_range, alpha_10, beta_9, xi_10, mu_10, CLmax, sL_max, k_10, rho_10, g0
+        WS_range, alpha_10, beta_9, xi_10, mu_10, CLmax, s_10, k_10, rho_10, g0
     )
+    print((WF_9 + comp_WF0(WS, S) / (1 - min_fuel) * min_fuel) / 1000 / g0)
     plt.fill_between(WS_range, TW_wet_10, 0.0, label="phase 10", alpha=0.3)
     plt.legend()
     plt.grid()
