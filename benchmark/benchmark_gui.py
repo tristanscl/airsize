@@ -888,10 +888,6 @@ def main():
         TW_wet_10 = cst.braking_roll(
             WS_range, alpha_10, beta_9, xi_10, mu_10, CLmax, s_10, k_10, rho_10, g0
         )
-        st.write(
-            "Remaining fuel at landing (t):",
-            (WF_9 + comp_WF0(WS, S) / (1 - min_fuel) * min_fuel) / 1000 / g0,
-        )
         plt.fill_between(WS_range, TW_wet_10, 0.0, label="phase 10", alpha=0.3)
         plt.legend()
         plt.grid()
